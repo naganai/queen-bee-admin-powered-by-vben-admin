@@ -2,6 +2,9 @@ import { defineApplicationConfig } from '@vben/vite-config';
 
 export default defineApplicationConfig({
   overrides: {
+    test: {
+      silent: false,
+    },
     optimizeDeps: {
       include: [
         'echarts/core',
