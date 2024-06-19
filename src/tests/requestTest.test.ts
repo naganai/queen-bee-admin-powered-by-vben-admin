@@ -6,6 +6,9 @@ import { AxiosResponse } from 'axios';
 // This test is to ensure that the axiosInstance has the correct baseURL
 describe('axiosInstance Test', () => {
   it('should have correct baseURL', () => {
+    expect(import.meta.env.VITE_GLOB_QUEEN_BEE_API_URL).toBe('https://localhost:44345/api');
+    console.log('baseURL:', import.meta.env.VITE_GLOB_QUEEN_BEE_API_URL);
+
     expect(axiosInstance.defaults.baseURL).toBe('https://localhost:44345/api');
   });
 

@@ -141,6 +141,8 @@ export interface ProjectConfig {
 export interface GlobConfig {
   // Site title
   title: string;
+  // QueenBee Service interface url
+  queenBeeApiUrl: string;
   // Service interface url
   apiUrl: string;
   // Upload url
@@ -155,6 +157,8 @@ export interface GlobEnvConfig {
   VITE_GLOB_APP_TITLE: string;
   // Service interface url
   VITE_GLOB_API_URL: string;
+  // QueenBee Service interface url
+  VITE_GLOB_QUEEN_BEE_API_URL: string;
   // Service interface url prefix
   VITE_GLOB_API_URL_PREFIX?: string;
   // Upload url

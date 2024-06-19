@@ -5,7 +5,7 @@ import https from 'https';
 import { RequestError } from '@/utils/errors/error';
 
 // Define a base URL for your API
-const baseURL = import.meta.env.VITE_GLOB_API_URL;
+const baseURL = import.meta.env.VITE_GLOB_QUEEN_BEE_API_URL;
 
 if (!baseURL) {
   throw new Error('API base URL is not configured in ENV variables.');
