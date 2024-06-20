@@ -3,6 +3,7 @@ import { axiosInstance } from '@/utils/http/request/request';
 import { describe, expect, it } from 'vitest';
 import AuthApi from '@/api/queenBeeApi/authApi';
 import { AxiosResponse } from 'axios';
+import { QUEEN_BEE_ACCESS_TOKEN_KEY } from '@/enums/cacheEnum';
 // This test is to ensure that the axiosInstance has the correct baseURL
 describe('axiosInstance Test', () => {
   it('should have correct baseURL', () => {
@@ -41,7 +42,11 @@ describe('axiosInstance Test', () => {
       console.log('login successfully');
 
       const accessToken = response.accessToken;
-      axiosInstance.defaults.headers.common['Authorization'] = `Bearer ${accessToken}`;
+
+      // save the access token to the local storage
+      localStorage.setItem(QUEEN_BEE_ACCESS_TOKEN_KEY, accessToken);
+
+      // axiosInstance.defaults.headers.common['Authorization'] = `Bearer ${accessToken}`;
       const testResponse = await axiosInstance.get('/test/auth');
       expect(testResponse.status).toBe(200);
       console.log('Test response data:', testResponse.data);

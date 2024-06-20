@@ -37,9 +37,10 @@
       <ACol :span="12">
         <FormItem :style="{ 'text-align': 'right' }">
           <!-- No logic, you need to deal with it yourself -->
-          <Button type="link" size="small" @click="setLoginState(LoginStateEnum.RESET_PASSWORD)">
+          <!-- TODO: 忘记密码的功能，先不实现 -->
+          <!-- <Button type="link" size="small" @click="setLoginState(LoginStateEnum.RESET_PASSWORD)">
             {{ t('sys.login.forgetPassword') }}
-          </Button>
+          </Button> -->
         </FormItem>
       </ACol>
     </ARow>
@@ -48,50 +49,21 @@
       <Button type="primary" size="large" block @click="handleLogin" :loading="loading">
         {{ t('sys.login.loginButton') }}
       </Button>
-      <!-- <Button size="large" class="mt-4 enter-x" block @click="handleRegister">
+      <Button
+        size="large"
+        class="mt-4 enter-x"
+        block
+        @click="setLoginState(LoginStateEnum.REGISTER)"
+      >
         {{ t('sys.login.registerButton') }}
-      </Button> -->
+      </Button>
     </FormItem>
-    <ARow class="enter-x" :gutter="[16, 16]">
-      <ACol :md="8" :xs="24">
-        <Button block @click="setLoginState(LoginStateEnum.MOBILE)">
-          {{ t('sys.login.mobileSignInFormTitle') }}
-        </Button>
-      </ACol>
-      <ACol :md="8" :xs="24">
-        <Button block @click="setLoginState(LoginStateEnum.QR_CODE)">
-          {{ t('sys.login.qrSignInFormTitle') }}
-        </Button>
-      </ACol>
-      <ACol :md="8" :xs="24">
-        <Button block @click="setLoginState(LoginStateEnum.REGISTER)">
-          {{ t('sys.login.registerButton') }}
-        </Button>
-      </ACol>
-    </ARow>
-
-    <Divider class="enter-x">{{ t('sys.login.otherSignIn') }}</Divider>
-
-    <div class="flex justify-evenly enter-x" :class="`${prefixCls}-sign-in-way`">
-      <GithubFilled />
-      <WechatFilled />
-      <AlipayCircleFilled />
-      <GoogleCircleFilled />
-      <TwitterCircleFilled />
-    </div>
   </Form>
 </template>
 <script lang="ts" setup>
   import { reactive, ref, unref, computed } from 'vue';
 
-  import { Checkbox, Form, Input, Row, Col, Button, Divider } from 'ant-design-vue';
-  import {
-    GithubFilled,
-    WechatFilled,
-    AlipayCircleFilled,
-    GoogleCircleFilled,
-    TwitterCircleFilled,
-  } from '@ant-design/icons-vue';
+  import { Checkbox, Form, Input, Row, Col, Button } from 'ant-design-vue';
   import LoginFormTitle from './LoginFormTitle.vue';
 
   import { useI18n } from '@/hooks/web/useI18n';
@@ -100,6 +72,14 @@
   import { useUserStore } from '@/store/modules/user';
   import { LoginStateEnum, useLoginState, useFormRules, useFormValid } from './useLogin';
   import { useDesign } from '@/hooks/web/useDesign';
+  import AuthApi from '@/api/queenBeeApi/authApi';
+  import {
+    QUEEN_BEE_ACCESS_TOKEN_KEY,
+    QUEEN_BEE_REFRESH_TOKEN_EXPIRATION_TIME_KEY,
+    QUEEN_BEE_REFRESH_TOKEN_KEY,
+    QUEEN_BEE_USER_ID_KEY,
+  } from '@/enums/cacheEnum';
+  import UserApi from '@/api/queenBeeApi/userApi';
   //import { onKeyStroke } from '@vueuse/core';
 
   const ACol = Col;
@@ -119,10 +99,12 @@
   const rememberMe = ref(false);
 
   const formData = reactive({
-    account: 'vben',
-    password: '123456',
+    account: '123123',
+    password: '123123',
   });
 
+  // Pass in the login form element reference object
+  // and return a method for validating it
   const { validForm } = useFormValid(formRef);
 
   //onKeyStroke('Enter', handleLogin);
@@ -134,9 +116,12 @@
     if (!data) return;
     try {
       loading.value = true;
+
+      // TODO: Add your own login logic here
+      queenBeeLogin(data.account, data.password);
       const userInfo = await userStore.login({
-        password: data.password,
-        username: data.account,
+        username: 'vben',
+        password: '123456',
         mode: 'none', //不要默认的错误提示
       });
       if (userInfo) {
@@ -154,6 +139,44 @@
       });
     } finally {
       loading.value = false;
+    }
+  }
+
+  async function queenBeeLogin(username: string, password: string) {
+    try {
+      let loginResultDto = await AuthApi.login(username, password);
+      console.log(loginResultDto);
+
+      // save the login information to the local storage
+      localStorage.setItem(QUEEN_BEE_USER_ID_KEY, loginResultDto.userId.toString());
+      localStorage.setItem(QUEEN_BEE_ACCESS_TOKEN_KEY, loginResultDto.accessToken);
+      localStorage.setItem(QUEEN_BEE_REFRESH_TOKEN_KEY, loginResultDto.refreshToken);
+      localStorage.setItem(
+        QUEEN_BEE_REFRESH_TOKEN_EXPIRATION_TIME_KEY,
+        loginResultDto.refreshTokenExpirationTime.toString(),
+      );
+
+      const userId = Number(localStorage.getItem(QUEEN_BEE_USER_ID_KEY));
+      getUserInfo(userId);
+    } catch (error) {
+      createErrorModal({
+        title: t('sys.api.errorTip'),
+        content: (error as unknown as Error).message || t('sys.api.networkExceptionMsg'),
+        getContainer: () => document.body.querySelector(`.${prefixCls}`) || document.body,
+      });
+    }
+  }
+
+  async function getUserInfo(userId: number) {
+    try {
+      let userInfo = await UserApi.getUserInfo(userId);
+      console.log(userInfo);
+    } catch (error) {
+      createErrorModal({
+        title: t('sys.api.errorTip'),
+        content: (error as unknown as Error).message || t('sys.api.networkExceptionMsg'),
+        getContainer: () => document.body.querySelector(`.${prefixCls}`) || document.body,
+      });
     }
   }
 </script>

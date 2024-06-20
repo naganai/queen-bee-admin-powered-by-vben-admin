@@ -1,8 +1,9 @@
 import ErrorCode from '@/enums/errorCodeEnum';
 import UnifiedResponse from '@/models/responses/unifiedResponse';
 import axios, { AxiosError, AxiosRequestConfig, AxiosResponse } from 'axios';
-import https from 'https';
+// import https from 'https';
 import { RequestError } from '@/utils/errors/error';
+import { QUEEN_BEE_ACCESS_TOKEN_KEY } from '@/enums/cacheEnum';
 
 // Define a base URL for your API
 const baseURL = import.meta.env.VITE_GLOB_QUEEN_BEE_API_URL;
@@ -16,26 +17,28 @@ export const axiosInstance = axios.create({
   baseURL,
   timeout: 3000,
   // use the https agent to ignore self-signed certificates
-  httpsAgent: new https.Agent({
-    rejectUnauthorized: false,
-  }),
+  // httpsAgent: new https.Agent({
+  //   rejectUnauthorized: false,
+  // }),
 });
 
-// // Define a function to handle the API response
-// function handleResponse<T>(response: AxiosResponse<T>): T | RequestError {
-//   const unifiedResponse = response.data as UnifiedResponse<T>;
-//   if (response.status >= 200 && response.status < 300) {
-//     return unifiedResponse.data as T;
-//   } else {
-//     if (unifiedResponse.errorCode === ErrorCode.Success) {
-//       console.error('Response status:', response.status);
-//       console.error('Response data:', unifiedResponse.data);
-//       throw new RequestError(response.status, unifiedResponse.errorCode, unifiedResponse.message);
-//     } else {
-//       return undefined as T;
-//     }
-//   }
-// }
+// add a request interceptor
+axiosInstance.interceptors.request.use(
+  async (config) => {
+    // add the access token to the Authorization header
+    const token = getAccessToken();
+    config.headers.Authorization = `Bearer ${token}`;
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  },
+);
+
+function getAccessToken(): string | '' {
+  const accessToken = localStorage.getItem(QUEEN_BEE_ACCESS_TOKEN_KEY);
+  return accessToken ? accessToken : '';
+}
 
 // Define a function to handle API errors
 function handleError(axiosError: AxiosError): void {

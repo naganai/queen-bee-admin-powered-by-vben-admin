@@ -4,6 +4,16 @@ import type { App } from 'vue';
 import { createRouter, createWebHashHistory } from 'vue-router';
 import { basicRoutes } from './routes';
 
+// TODO: QueenBee 菜单设计
+// - 账号：管理用信息、分配生产项目
+// - 生产项目：管理生产项目
+// - 客户：管理客户信息
+// - 软体系统：管理第三方系统及其开发者
+// - 权限：包含访问权限和API权限
+//  - 软体系统权限
+//  - 软体系统API权限
+// 部门: 管理部门、课别和职位
+
 // 白名单应该包含基本静态路由
 const WHITE_NAME_LIST: string[] = [];
 const getRouteNames = (array: any[]) =>

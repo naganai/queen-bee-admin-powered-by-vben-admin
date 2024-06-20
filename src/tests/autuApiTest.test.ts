@@ -14,7 +14,7 @@ describe('AuthApi Test', () => {
       response = await AuthApi.login(username, password);
       console.log('Response data', response);
     } catch (error) {
-      console.error('An error occurred during login');
+      console.error(error.toString());
     }
     expect(response).toBeDefined();
   });
