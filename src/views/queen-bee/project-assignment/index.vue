@@ -1,219 +1,142 @@
 <template>
-  <div :class="getClass" :style="getStyle" ref="wrapperRef">
-    <PageHeader
-      :ghost="ghost"
-      :title="title"
-      v-bind="omit($attrs, 'class')"
-      :style="getHeaderStyle"
-      ref="headerRef"
-      v-if="getShowHeader"
-    >
-      <template #default>
-        <template v-if="content">
-          {{ content }}
-        </template>
-        <slot name="headerContent" v-else></slot>
-      </template>
-      <template #[item]="data" v-for="item in getHeaderSlots">
-        <slot :name="item" v-bind="data || {}"></slot>
-      </template>
-    </PageHeader>
-
-    <div class="overflow-hidden" :class="getContentClass" :style="getContentStyle" ref="contentRef">
-      <slot></slot>
+  <div class="p-4 h-full flex flex-col">
+    <div class="bg-white border-rd-md border-gray p-4 mb-4">
+      <Typography>
+        <!-- TODO：给部分文本加上强调修饰 -->
+        <TypographyText>
+          提示：选择一个用户。点击已分配的机型的"-"号按钮，取消分配一个机型。点击未分配的机型的"+"号按钮，给用户分配一个机型。</TypographyText
+        >
+      </Typography>
     </div>
+    <Row :gutter="12" class="flex-1 overflow-hidden">
+      <Col span="8" class="h-full">
+        <div class="h-full bg-white border-rd-md border-gray overflow-hidden flex flex-col">
+          <div class="ml-6 mr-6 mb-3 mt-3">
+            <TypographyTitle :level="4">用户</TypographyTitle>
+            <TypographyText
+              class="mb-2"
+              type="secondary"
+              ellipsis
+              content="选择一个准备分配机型的用户"
+            />
+            <Input
+              v-model:value="usersSearchKeyword"
+              placeholder="请搜索要准备分配机型的用户"
+              allow-clear
+            />
+          </div>
+          <ScrollContainer>
+            <List :data-source="users" class="bg-white">
+              <template #renderItem="{ item }">
+                <List.Item
+                  @click="handleSelectUser(item)"
+                  :class="{ selected: selectedUser === item }"
+                >
+                  {{ item }}
+                </List.Item>
+              </template>
+            </List>
+          </ScrollContainer>
+        </div>
+      </Col>
 
-    <PageFooter v-if="getShowFooter" ref="footerRef">
-      <template #left>
-        <slot name="leftFooter"></slot>
-      </template>
-      <template #right>
-        <slot name="rightFooter"></slot>
-      </template>
-    </PageFooter>
+      <Col span="16" class="h-full">
+        <div class="h-full flex bg-white border-rd-md border-gray">
+          <div class="h-full flex-1 overflow-hidden flex flex-col">
+            <div class="ml-6 mr-6 mb-3 mt-3">
+              <TypographyTitle :level="4">已分配的机型</TypographyTitle>
+              <TypographyText type="secondary" ellipsis content="点击下面的机型将取消分配" />
+            </div>
+            <ScrollContainer>
+              <List :data-source="assignedProjects" class="bg-white">
+                <template #renderItem="{ item }">
+                  <List.Item @click="handleUnassignProject(item)">
+                    <span> {{ item }}</span>
+                    <MinusSquareOutlined class="text-red-500" />
+                  </List.Item>
+                </template>
+              </List>
+            </ScrollContainer>
+          </div>
+          <Divider type="vertical" class="h-full" />
+          <div class="h-full flex-1 overflow-hidden flex flex-col">
+            <div class="ml-6 mr-6 mb-3 mt-3">
+              <TypographyTitle :level="4">未分配的机型</TypographyTitle>
+              <TypographyText type="secondary" ellipsis content="点击下面的机型将给用户分配机型" />
+            </div>
+            <ScrollContainer>
+              <List :data-source="unassignedProjects" class="bg-white">
+                <template #renderItem="{ item }">
+                  <List.Item @click="handleAssignProject(item)">
+                    <span>{{ item }}</span>
+                    <PlusSquareOutlined class="text-green-500" />
+                  </List.Item>
+                </template>
+              </List>
+            </ScrollContainer>
+          </div>
+        </div>
+      </Col>
+    </Row>
   </div>
 </template>
+
 <script lang="ts" setup>
-  import { PageWrapperFixedHeightKey } from '@/enums/pageEnum';
-  import { useContentHeight } from '@/hooks/web/useContentHeight';
-  import { useDesign } from '@/hooks/web/useDesign';
-  import { propTypes } from '@/utils/propTypes';
-  import { PageHeader } from 'ant-design-vue';
-  import { omit, debounce } from 'lodash-es';
-  import { useElementSize } from '@vueuse/core';
+  import { faker } from '@faker-js/faker';
   import {
-    CSSProperties,
-    PropType,
-    computed,
-    provide,
-    ref,
-    unref,
-    useAttrs,
-    useSlots,
-    watch,
-  } from 'vue';
-  import PageFooter from './PageFooter.vue';
+    Col,
+    Row,
+    List,
+    Typography,
+    TypographyTitle,
+    TypographyText,
+    Input,
+    Divider,
+  } from 'ant-design-vue';
+  import { MinusSquareOutlined, PlusSquareOutlined } from '@ant-design/icons-vue';
+  import { ScrollContainer } from '@/components/Container';
+  import { computed, Ref, ref } from 'vue';
 
-  defineOptions({
-    name: 'PageWrapper',
-    inheritAttrs: false,
+  const users: string[] = generateRandomNames();
+  const allProjects: string[] = generateRandomProjects();
+  const selectedUser = ref('');
+  const usersSearchKeyword = ref('');
+
+  const assignedProjects: Ref<string[]> = ref([]);
+  const unassignedProjects = computed(() => {
+    return allProjects.filter((project) => !assignedProjects.value.includes(project));
   });
 
-  const props = defineProps({
-    title: propTypes.string,
-    dense: propTypes.bool,
-    ghost: propTypes.bool,
-    headerSticky: propTypes.bool,
-    headerStyle: Object as PropType<CSSProperties>,
-    content: propTypes.string,
-    contentStyle: {
-      type: Object as PropType<CSSProperties>,
-    },
-    contentBackground: propTypes.bool,
-    contentFullHeight: propTypes.bool.def(false),
-    contentClass: propTypes.string,
-    fixedHeight: propTypes.bool,
-    upwardSpace: propTypes.oneOfType([propTypes.number, propTypes.string]).def(0),
-  });
+  function handleSelectUser(user: string): void {
+    selectedUser.value = user;
+  }
 
-  const attrs = useAttrs();
-  const slots = useSlots();
+  function handleAssignProject(project: string): void {
+    assignedProjects.value.push(project);
+  }
 
-  const wrapperRef = ref(null);
-  const headerRef = ref(null);
-  const contentRef = ref(null);
-  const footerRef = ref(null);
-
-  const { height } = useElementSize(wrapperRef);
-
-  const { prefixCls } = useDesign('page-wrapper');
-
-  provide(
-    PageWrapperFixedHeightKey,
-    computed(() => props.fixedHeight),
-  );
-
-  const getIsContentFullHeight = computed(() => {
-    return props.contentFullHeight;
-  });
-
-  const getUpwardSpace = computed(() => props.upwardSpace);
-  const { redoHeight, setCompensation, contentHeight } = useContentHeight(
-    getIsContentFullHeight,
-    wrapperRef,
-    [headerRef, footerRef],
-    [contentRef],
-    getUpwardSpace,
-  );
-  const debounceRedoHeight = debounce(redoHeight, 50);
-  setCompensation({ useLayoutFooter: true, elements: [footerRef] });
-
-  const getClass = computed(() => {
-    return [
-      prefixCls,
-      {
-        [`${prefixCls}--dense`]: props.dense,
-      },
-      attrs.class ?? {},
-    ];
-  });
-
-  const getStyle = computed(() => {
-    const { contentFullHeight, fixedHeight } = props;
-    return {
-      ...(contentFullHeight && fixedHeight ? { height: '100%' } : {}),
-    };
-  });
-
-  const getHeaderStyle = computed((): CSSProperties => {
-    const { headerSticky } = props;
-    if (!headerSticky) {
-      return {};
+  function handleUnassignProject(project: string): void {
+    const index = assignedProjects.value.indexOf(project);
+    if (index !== -1) {
+      assignedProjects.value.splice(index, 1);
     }
+  }
 
-    return {
-      position: 'sticky',
-      top: 0,
-      zIndex: 99,
-      ...props.headerStyle,
-    };
-  });
+  function generateRandomProjects(): string[] {
+    return Array.from({ length: 50 }, () => faker.location.city());
+  }
 
-  const getShowHeader = computed(
-    () => props.content || slots?.headerContent || props.title || getHeaderSlots.value.length,
-  );
-
-  const getShowFooter = computed(() => slots?.leftFooter || slots?.rightFooter);
-
-  const getHeaderSlots = computed(() => {
-    return Object.keys(omit(slots, 'default', 'leftFooter', 'rightFooter', 'headerContent'));
-  });
-
-  const getContentStyle = computed((): CSSProperties => {
-    const { contentFullHeight, contentStyle, fixedHeight } = props;
-    if (!contentFullHeight) {
-      return { ...contentStyle };
-    }
-
-    const height = `${unref(contentHeight)}px`;
-    return {
-      ...contentStyle,
-      minHeight: height,
-      ...(fixedHeight ? { height } : {}),
-    };
-  });
-
-  const getContentClass = computed(() => {
-    const { contentBackground, contentClass } = props;
-    return [
-      `${prefixCls}-content`,
-      contentClass,
-      {
-        [`${prefixCls}-content-bg`]: contentBackground,
-      },
-    ];
-  });
-
-  watch(
-    () => [getShowFooter.value],
-    () => {
-      redoHeight();
-    },
-    {
-      flush: 'post',
-      immediate: true,
-    },
-  );
-
-  watch(height, () => {
-    const { contentFullHeight, fixedHeight } = props;
-    contentFullHeight && fixedHeight && debounceRedoHeight();
-  });
+  function generateRandomNames(): string[] {
+    return Array.from({ length: 50 }, () => faker.commerce.productName());
+  }
 </script>
-<style lang="less">
-  @prefix-cls: ~'@{namespace}-page-wrapper';
 
-  .@{prefix-cls} {
-    position: relative;
+<style scoped lang="less">
+  .ant-list-item {
+    cursor: pointer;
 
-    .@{prefix-cls}-content {
-      margin: 16px;
-    }
-
-    .ant-page-header {
-      &:empty {
-        padding: 0;
-      }
-    }
-
-    &-content-bg {
-      background-color: @component-background;
-    }
-
-    &--dense {
-      .@{prefix-cls}-content {
-        margin: 0;
-      }
+    &.selected {
+      background-color: #ddd;
     }
   }
 </style>

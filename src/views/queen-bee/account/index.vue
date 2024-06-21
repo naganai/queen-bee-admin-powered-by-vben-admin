@@ -1,7 +1,12 @@
 <template>
   <div class="p-4">
     <!-- 用户信息表格 -->
-    <Table :columns="tableColumns" :data-source="tableData">
+    <BasicTable
+      :columns="tableColumns"
+      :data-source="tableData"
+      :showIndexColumn="false"
+      :pagination="{ pageSize: 20 }"
+    >
       <!-- 添加headercell，居中操作栏的表头 -->
       <template #headerCell="{ column }">
         <template v-if="column.key === 'action'">
@@ -32,7 +37,8 @@
           {{ record[column.dataIndex?.toString() ?? ''] }}
         </template>
       </template>
-    </Table>
+    </BasicTable>
+
     <!-- 编辑用户信息抽屉 -->
     <Drawer
       v-model:open="userInfoEditDrawerVisible"
@@ -115,10 +121,10 @@
 
 <script lang="ts" setup>
   import { ref, reactive } from 'vue';
-  import { Button, Table, Drawer, Form, Input, Popconfirm, message } from 'ant-design-vue';
+  import { Button, Drawer, Form, Input, Popconfirm, message } from 'ant-design-vue';
   import TableRow from './tableRow';
-  import { ColumnType } from 'ant-design-vue/es/table';
   import type { Rule } from 'ant-design-vue/es/form';
+  import { BasicColumn, BasicTable } from '@/components/Table';
 
   const userInfoEditDrawerVisible = ref(false);
   const userInfoAddDrawerVisible = ref(false);
@@ -161,11 +167,12 @@
     position: [{ required: true, message: '请输入职位', trigger: 'blur' }],
   };
 
-  const tableColumns: ColumnType<any>[] = [
+  const tableColumns: BasicColumn[] = [
     {
       title: '用户名',
       dataIndex: 'username',
       key: 'username',
+      width: 150,
     },
     {
       title: '昵称',
@@ -176,59 +183,53 @@
       title: '部门',
       dataIndex: 'department',
       key: 'department',
+      width: 100,
     },
     {
       title: '课',
       dataIndex: 'division',
       key: 'division',
+      width: 100,
     },
     {
       title: '职位',
       dataIndex: 'position',
       key: 'position',
+      width: 150,
     },
     {
       title: '负责的机型',
       dataIndex: 'productCount',
       key: 'productCount',
+      width: 150,
     },
     {
       title: '操作',
       dataIndex: 'action',
       key: 'action',
       align: 'center',
+      width: 200,
     },
   ];
 
-  const tableData = ref<TableRow[]>([
-    {
-      userId: 1,
-      username: 'John Brown',
-      nickname: 'New York No. 1 Lake Park',
-      department: '工程部',
-      division: '测试课',
-      position: '软件开发工程师',
-      productCount: 0,
-    },
-    {
-      userId: 2,
-      username: 'Jim Green',
-      nickname: 'London No. 1 Lake Park',
-      department: '工程部',
-      division: '测试课',
-      position: '硬件开发工程师',
-      productCount: 0,
-    },
-    {
-      userId: 3,
-      username: 'Joe Black',
-      nickname: 'Sidney No. 1 Lake Park',
-      department: '工程部',
-      division: '测试课',
-      position: '声学开发工程师',
-      productCount: 0,
-    },
-  ]);
+  const tableData = ref(generateRandomData());
+
+  function generateRandomData(): TableRow[] {
+    const tableData: TableRow[] = [];
+    for (let i = 1; i <= 100; i++) {
+      const tableRow: TableRow = {
+        userId: i,
+        username: `User ${i}`,
+        nickname: `Nickname ${i}`,
+        department: `Department ${i}`,
+        division: `Division ${i}`,
+        position: `Position ${i}`,
+        productCount: 0,
+      };
+      tableData.push(tableRow);
+    }
+    return tableData;
+  }
 
   async function saveUserInfo() {
     try {
@@ -278,12 +279,12 @@
   }
 
   function handleDelete(userId: number) {
-    // TODO 弹框确认
     const index = tableData.value.findIndex((item) => item.userId === userId);
     if (index !== -1) {
       tableData.value.splice(index, 1);
     }
+    message.success('删除成功');
   }
 </script>
 
-<style></style>
+<style scoped lang="less"></style>
