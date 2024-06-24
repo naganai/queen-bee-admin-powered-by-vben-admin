@@ -24,6 +24,15 @@ const system: AppRouteModule = {
       component: () => import('@/views/queen-bee/account/index.vue'),
     },
     {
+      path: 'project',
+      name: 'QueenBeeProject',
+      meta: {
+        title: t('routes.demo.system.project'),
+        ignoreKeepAlive: false,
+      },
+      component: () => import('@/views/queen-bee/project/index.vue'),
+    },
+    {
       path: 'project-assignment',
       name: 'QueenBeeProjectAssignment',
       meta: {

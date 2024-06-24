@@ -5,5 +5,6 @@ export interface UserDto {
 
 export interface NewUserDto {
   username: string;
+  nickname: string;
   password: string;
 }

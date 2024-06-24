@@ -80,6 +80,7 @@
     QUEEN_BEE_USER_ID_KEY,
   } from '@/enums/cacheEnum';
   import UserApi from '@/api/queenBeeApi/userApi';
+  import { router } from '@/router';
   //import { onKeyStroke } from '@vueuse/core';
 
   const ACol = Col;
@@ -145,7 +146,6 @@
   async function queenBeeLogin(username: string, password: string) {
     try {
       let loginResultDto = await AuthApi.login(username, password);
-      console.log(loginResultDto);
 
       // save the login information to the local storage
       localStorage.setItem(QUEEN_BEE_USER_ID_KEY, loginResultDto.userId.toString());
@@ -158,6 +158,13 @@
 
       const userId = Number(localStorage.getItem(QUEEN_BEE_USER_ID_KEY));
       getUserInfo(userId);
+
+      // redirect to another web site if needed
+      const redirect = unref(router.currentRoute).query.redirect;
+      console.log(redirect);
+      if (redirect) {
+        window.location.href = redirect as string;
+      }
     } catch (error) {
       createErrorModal({
         title: t('sys.api.errorTip'),

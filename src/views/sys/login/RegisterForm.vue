@@ -2,28 +2,20 @@
   <div v-if="getShow">
     <LoginFormTitle class="enter-x" />
     <Form class="p-4 enter-x" :model="formData" :rules="getFormRules" ref="formRef">
-      <FormItem name="account" class="enter-x">
+      <FormItem name="username" class="enter-x">
         <Input
           class="fix-auto-fill"
           size="large"
-          v-model:value="formData.account"
+          v-model:value="formData.username"
           :placeholder="t('sys.login.userName')"
         />
       </FormItem>
-      <FormItem name="mobile" class="enter-x">
+      <FormItem name="nickname" class="enter-x">
         <Input
           size="large"
-          v-model:value="formData.mobile"
-          :placeholder="t('sys.login.mobile')"
+          v-model:value="formData.nickname"
+          :placeholder="t('sys.login.nickname')"
           class="fix-auto-fill"
-        />
-      </FormItem>
-      <FormItem name="sms" class="enter-x">
-        <CountdownInput
-          size="large"
-          class="fix-auto-fill"
-          v-model:value="formData.sms"
-          :placeholder="t('sys.login.smsCode')"
         />
       </FormItem>
       <FormItem name="password" class="enter-x">
@@ -40,13 +32,6 @@
           v-model:value="formData.confirmPassword"
           :placeholder="t('sys.login.confirmPassword')"
         />
-      </FormItem>
-
-      <FormItem class="enter-x" name="policy">
-        <!-- No logic, you need to deal with it yourself -->
-        <Checkbox v-model:checked="formData.policy" size="small">
-          {{ t('sys.login.policy') }}
-        </Checkbox>
       </FormItem>
 
       <Button
@@ -66,13 +51,14 @@
   </div>
 </template>
 <script lang="ts" setup>
+  // 成功后跳转到指定页面（从URL获取）
   import { reactive, ref, unref, computed } from 'vue';
   import LoginFormTitle from './LoginFormTitle.vue';
-  import { Form, Input, Button, Checkbox } from 'ant-design-vue';
+  import { Form, Input, Button, message } from 'ant-design-vue';
   import { StrengthMeter } from '@/components/StrengthMeter';
-  import { CountdownInput } from '@/components/CountDown';
   import { useI18n } from '@/hooks/web/useI18n';
   import { useLoginState, useFormRules, useFormValid, LoginStateEnum } from './useLogin';
+  import UserApi from '@/api/queenBeeApi/userApi';
 
   const FormItem = Form.Item;
   const InputPassword = Input.Password;
@@ -83,12 +69,10 @@
   const loading = ref(false);
 
   const formData = reactive({
-    account: '',
+    username: '',
+    nickname: '',
     password: '',
     confirmPassword: '',
-    mobile: '',
-    sms: '',
-    policy: false,
   });
 
   const { getFormRules } = useFormRules(formData);
@@ -99,6 +83,18 @@
   async function handleRegister() {
     const data = await validForm();
     if (!data) return;
-    console.log(data);
+
+    // 1. 发送请求
+    loading.value = true;
+    try {
+      await UserApi.register(data);
+      // 成功后返回到登录页面
+      message.success(t('sys.login.registerSuccess'));
+      handleBackLogin();
+    } catch (error) {
+      message.error(error.message);
+    } finally {
+      loading.value = false;
+    }
   }
 </script>

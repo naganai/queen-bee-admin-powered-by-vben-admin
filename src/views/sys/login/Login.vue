@@ -48,6 +48,7 @@
   </div>
 </template>
 <script lang="ts" setup>
+  // TODO: 登录成功后，支持重定向到指定页面
   import { AppDarkModeToggle, AppLocalePicker, AppLogo } from '@/components/Application';
   import { useGlobSetting } from '@/hooks/setting';
   import { useDesign } from '@/hooks/web/useDesign';

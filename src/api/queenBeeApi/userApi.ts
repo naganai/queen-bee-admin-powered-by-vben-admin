@@ -1,5 +1,5 @@
 import { httpPost, httpGet, httpDelete } from '@/utils/http/request/request';
-import { UserDto, NewUserDto } from '@/models/DTOs/userDto';
+import { UserDto, NewUserDto as RegisterDto } from '@/models/DTOs/userDto';
 import { PagedList } from '@/models/responses/pagedList';
 import UserInfoDto from '@/models/DTOs/userInfoDto';
 import { ProductionProjectDto } from '@/models/DTOs/productionProjectDto';
@@ -27,10 +27,10 @@ const USER_PRODUCTION_PROJECT_API = {
 export default class UserApi {
   /**
    * Registers a new user.
-   * @param newUserDto - The data of the new user to be registered.
+   * @param userRegisterDto - The data of the new user to be registered.
    */
-  static async register(newUserDto: NewUserDto): Promise<void> {
-    await httpPost(USER_API.REGISTER_USER, newUserDto);
+  static async register(userRegisterDto: RegisterDto): Promise<UserDto> {
+    return await httpPost(USER_API.REGISTER_USER, userRegisterDto);
   }
 
   /**

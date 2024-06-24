@@ -153,6 +153,7 @@
     "moduleName": "系统管理",
     "password": "修改密码",
     "project_assignment": "机型分配",
+    "project": "机型",
     "queenBee": "QueenBee",
     "role": "角色管理",
     "vxeTableAccount": "账号管理(VxeTable)"

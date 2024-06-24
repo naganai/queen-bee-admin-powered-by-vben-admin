@@ -2,6 +2,7 @@
   <div class="p-4">
     <!-- 用户信息表格 -->
     <BasicTable
+      class="border-rd-md overflow-hidden"
       :columns="tableColumns"
       :data-source="tableData"
       :showIndexColumn="false"
@@ -81,12 +82,7 @@
     </Drawer>
 
     <!-- 添加新用户抽屉 -->
-    <Drawer
-      v-model:open="userInfoAddDrawerVisible"
-      title="添加新用户"
-      placement="right"
-      destroyOnClose
-    >
+    <Drawer v-model:open="userInfoAddDrawerVisible" title="添加新用户" placement="right">
       <template #extra>
         <Button type="primary" @click="addNewUser">添加</Button>
       </template>
@@ -120,7 +116,7 @@
 </template>
 
 <script lang="ts" setup>
-  import { ref, reactive } from 'vue';
+  import { ref, reactive, nextTick } from 'vue';
   import { Button, Drawer, Form, Input, Popconfirm, message } from 'ant-design-vue';
   import TableRow from './tableRow';
   import type { Rule } from 'ant-design-vue/es/form';
@@ -197,12 +193,12 @@
       key: 'position',
       width: 150,
     },
-    {
-      title: '负责的机型',
-      dataIndex: 'productCount',
-      key: 'productCount',
-      width: 150,
-    },
+    // {
+    //   title: '负责的机型',
+    //   dataIndex: 'productCount',
+    //   key: 'productCount',
+    //   width: 150,
+    // },
     {
       title: '操作',
       dataIndex: 'action',
@@ -270,6 +266,11 @@
 
   function handleAdd() {
     userInfoAddDrawerVisible.value = true;
+    // waiting for drawer to open and element to be rendered
+    nextTick(() => {
+      // reset form data
+      userInfoAddFormRef.value.resetFields();
+    });
   }
 
   function handleEdit(record: Record<string, any>) {

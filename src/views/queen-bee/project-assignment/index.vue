@@ -1,24 +1,15 @@
 <template>
   <div class="p-4 h-full flex flex-col">
     <div class="bg-white border-rd-md border-gray p-4 mb-4">
-      <Typography>
-        <!-- TODO：给部分文本加上强调修饰 -->
-        <TypographyText>
-          提示：选择一个用户。点击已分配的机型的"-"号按钮，取消分配一个机型。点击未分配的机型的"+"号按钮，给用户分配一个机型。</TypographyText
-        >
-      </Typography>
+      ℹ️ 提示：选择一个用户。点击
+      <MinusSquareOutlined class="text-red-500" /> 按钮，取消分配一个机型。 点击
+      <PlusSquareOutlined class="text-green-500" /> 按钮，分配一个机型。
     </div>
     <Row :gutter="12" class="flex-1 overflow-hidden">
       <Col span="8" class="h-full">
         <div class="h-full bg-white border-rd-md border-gray overflow-hidden flex flex-col">
           <div class="ml-6 mr-6 mb-3 mt-3">
             <TypographyTitle :level="4">用户</TypographyTitle>
-            <TypographyText
-              class="mb-2"
-              type="secondary"
-              ellipsis
-              content="选择一个准备分配机型的用户"
-            />
             <Input
               v-model:value="usersSearchKeyword"
               placeholder="请搜索要准备分配机型的用户"
@@ -45,10 +36,14 @@
           <div class="h-full flex-1 overflow-hidden flex flex-col">
             <div class="ml-6 mr-6 mb-3 mt-3">
               <TypographyTitle :level="4">已分配的机型</TypographyTitle>
-              <TypographyText type="secondary" ellipsis content="点击下面的机型将取消分配" />
+              <Input
+                v-model:value="assignedProjectsSearchKeyword"
+                placeholder="请搜索已分配的机型"
+                allow-clear
+              />
             </div>
             <ScrollContainer>
-              <List :data-source="assignedProjects" class="bg-white">
+              <List :data-source="filteredAssignedProjects" class="bg-white">
                 <template #renderItem="{ item }">
                   <List.Item @click="handleUnassignProject(item)">
                     <span> {{ item }}</span>
@@ -62,10 +57,14 @@
           <div class="h-full flex-1 overflow-hidden flex flex-col">
             <div class="ml-6 mr-6 mb-3 mt-3">
               <TypographyTitle :level="4">未分配的机型</TypographyTitle>
-              <TypographyText type="secondary" ellipsis content="点击下面的机型将给用户分配机型" />
+              <Input
+                v-model:value="unassignedProjectsSearchKeyword"
+                placeholder="请搜索未分配的机型"
+                allow-clear
+              />
             </div>
             <ScrollContainer>
-              <List :data-source="unassignedProjects" class="bg-white">
+              <List :data-source="filteredUnassignedProjects" class="bg-white">
                 <template #renderItem="{ item }">
                   <List.Item @click="handleAssignProject(item)">
                     <span>{{ item }}</span>
@@ -83,16 +82,7 @@
 
 <script lang="ts" setup>
   import { faker } from '@faker-js/faker';
-  import {
-    Col,
-    Row,
-    List,
-    Typography,
-    TypographyTitle,
-    TypographyText,
-    Input,
-    Divider,
-  } from 'ant-design-vue';
+  import { Col, Row, List, TypographyTitle, Input, Divider } from 'ant-design-vue';
   import { MinusSquareOutlined, PlusSquareOutlined } from '@ant-design/icons-vue';
   import { ScrollContainer } from '@/components/Container';
   import { computed, Ref, ref } from 'vue';
@@ -100,11 +90,23 @@
   const users: string[] = generateRandomNames();
   const allProjects: string[] = generateRandomProjects();
   const selectedUser = ref('');
+
   const usersSearchKeyword = ref('');
+  const assignedProjectsSearchKeyword = ref('');
+  const unassignedProjectsSearchKeyword = ref('');
 
   const assignedProjects: Ref<string[]> = ref([]);
-  const unassignedProjects = computed(() => {
-    return allProjects.filter((project) => !assignedProjects.value.includes(project));
+  const filteredAssignedProjects = computed(() => {
+    return assignedProjects.value.filter((project) => {
+      const keyword = assignedProjectsSearchKeyword.value.toLowerCase();
+      return project.toLowerCase().includes(keyword);
+    });
+  });
+  const filteredUnassignedProjects = computed(() => {
+    return allProjects.filter((project) => {
+      const keyword = unassignedProjectsSearchKeyword.value.toLowerCase();
+      return !assignedProjects.value.includes(project) && project.toLowerCase().includes(keyword);
+    });
   });
 
   function handleSelectUser(user: string): void {

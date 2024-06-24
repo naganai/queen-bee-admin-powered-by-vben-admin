@@ -148,12 +148,13 @@
   },
   "system": {
     "account": "Account management",
-    "project_assignment": "Project assignment",
     "account_detail": "Account detail",
     "dept": "Department management",
     "menu": "Menu management",
     "moduleName": "System management",
     "password": "Change password",
+    "project": "Project",
+    "project_assignment": "Project assignment",
     "queenBee": "QueenBee",
     "role": "Role management",
     "vxeTableAccount": "Account management(VxeTable)"
