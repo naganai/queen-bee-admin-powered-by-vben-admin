@@ -8,7 +8,6 @@
       :showIndexColumn="false"
       :pagination="{ pageSize: 20 }"
     >
-      <!-- 添加headercell，居中操作栏的表头 -->
       <template #headerCell="{ column }">
         <template v-if="column.key === 'action'">
           <a-button color="success" @click="handleAdd">添加新用户 </a-button>
@@ -29,11 +28,13 @@
             <Button type="link" danger>删除</Button>
           </Popconfirm>
         </template>
-        <!-- else if -->
         <template v-else-if="column.key === 'productCount'">
-          <span>{{ record[column.dataIndex?.toString() ?? ''] }}个</span>
-          <Button type="link">查看</Button>
+          <Button type="link" @click="handleAssignProject">查看</Button>
         </template>
+        <template v-else-if="column.key === 'roleId'">
+          <span>{{ getRoleName(record[column.dataIndex?.toString() ?? '']) }}</span>
+        </template>
+
         <template v-else>
           {{ record[column.dataIndex?.toString() ?? ''] }}
         </template>
@@ -78,6 +79,13 @@
         <Form.Item label="职位" name="position">
           <Input v-model:value="userInfoEditFormData.position" placeholder="请输入职位" />
         </Form.Item>
+        <Form.Item label="角色" name="roleId">
+          <Select v-model:value="userInfoEditFormData.roleId" placeholder="请选择角色">
+            <Select.Option v-for="role in roleOptions" :key="role.id" :value="role.id">{{
+              role.name
+            }}</Select.Option>
+          </Select>
+        </Form.Item>
       </Form>
     </Drawer>
 
@@ -110,17 +118,108 @@
         <Form.Item label="职位" name="position">
           <Input v-model:value="userInfoAddFormData.position" placeholder="请输入职位" />
         </Form.Item>
+        <Form.Item label="角色" name="roleId">
+          <Select v-model:value="userInfoAddFormData.roleId" placeholder="请选择角色">
+            <Select.Option v-for="role in roleOptions" :key="role.id" :value="role.id">{{
+              role.name
+            }}</Select.Option>
+          </Select>
+        </Form.Item>
       </Form>
+    </Drawer>
+
+    <Drawer v-model:open="projectAssignModal.visible" title="负责的专案" size="large">
+      <template #extra>
+        <Button type="primary" @click="handleAssignProjectSubmit">保存</Button>
+      </template>
+
+      <div class="h-full overflow-hidden flex gap-4">
+        <div class="h-full flex-1 overflow-hidden flex flex-col">
+          <div class="mb-4">
+            <TypographyTitle :level="5">已分配的专案</TypographyTitle>
+            <Input
+              v-model:value="assignedProjectsSearchKeyword"
+              placeholder="请搜索已分配的专案"
+              allow-clear
+            />
+          </div>
+          <ScrollContainer class="border-color border rounded-md">
+            <List :data-source="filteredAssignedProjects" class="bg-white">
+              <template #renderItem="{ item }">
+                <List.Item @click="handleUnassignProjectFromUser(item)">
+                  <span> {{ item }}</span>
+                  <MinusSquareOutlined class="text-red-500" />
+                </List.Item>
+              </template>
+            </List>
+          </ScrollContainer>
+        </div>
+        <div class="h-full flex-1 overflow-hidden flex flex-col">
+          <div class="mb-4">
+            <TypographyTitle :level="5">未分配的专案</TypographyTitle>
+            <Input
+              v-model:value="unassignedProjectsSearchKeyword"
+              placeholder="请搜索未分配的专案"
+              allow-clear
+            />
+          </div>
+          <ScrollContainer class="border-color border rounded-md">
+            <List :data-source="filteredUnassignedProjects" class="bg-white">
+              <template #renderItem="{ item }">
+                <List.Item @click="handleAssignProjectToUser(item)">
+                  <span>{{ item }}</span>
+                  <PlusSquareOutlined class="text-green-500" />
+                </List.Item>
+              </template>
+            </List>
+          </ScrollContainer>
+        </div>
+      </div>
     </Drawer>
   </div>
 </template>
 
 <script lang="ts" setup>
-  import { ref, reactive, nextTick } from 'vue';
-  import { Button, Drawer, Form, Input, Popconfirm, message } from 'ant-design-vue';
-  import TableRow from './tableRow';
+  import { ref, reactive, nextTick, Ref, computed } from 'vue';
+  import {
+    Button,
+    Drawer,
+    Form,
+    Input,
+    Popconfirm,
+    message,
+    Select,
+    List,
+    TypographyTitle,
+  } from 'ant-design-vue';
+  import { MinusSquareOutlined, PlusSquareOutlined } from '@ant-design/icons-vue';
+  import { ScrollContainer } from '@/components/Container';
   import type { Rule } from 'ant-design-vue/es/form';
   import { BasicColumn, BasicTable } from '@/components/Table';
+  import { faker } from '@faker-js/faker';
+
+  interface Role {
+    id: number;
+    name: string;
+  }
+
+  interface TableRow {
+    userId: number;
+    /**用户名 */
+    username: string;
+    /**昵称 */
+    nickname: string;
+    /**所属部门 */
+    department: string;
+    /**所属课 */
+    division: string;
+    /**职位 */
+    position: string;
+    /** 角色Id */
+    roleId: number;
+    /** 拥有的生产产品的数量 */
+    productCount: number;
+  }
 
   const userInfoEditDrawerVisible = ref(false);
   const userInfoAddDrawerVisible = ref(false);
@@ -135,6 +234,7 @@
     department: '',
     division: '',
     position: '',
+    roleId: 0,
   });
 
   let userInfoAddFormData = reactive({
@@ -144,6 +244,7 @@
     department: '',
     division: '',
     position: '',
+    roleId: 0,
   });
 
   const userInfoAddFormRules: Record<string, Rule[]> = {
@@ -153,6 +254,7 @@
     department: [{ required: true, message: '请输入部门', trigger: 'blur' }],
     division: [{ required: true, message: '请输入课', trigger: 'blur' }],
     position: [{ required: true, message: '请输入职位', trigger: 'blur' }],
+    roleId: [{ required: true, message: '请选择角色', trigger: 'blur' }],
   };
 
   const userInfoEditFormRules: Record<string, Rule[]> = {
@@ -161,6 +263,7 @@
     department: [{ required: true, message: '请输入部门', trigger: 'blur' }],
     division: [{ required: true, message: '请输入课', trigger: 'blur' }],
     position: [{ required: true, message: '请输入职位', trigger: 'blur' }],
+    roleId: [{ required: true, message: '请选择角色', trigger: 'blur' }],
   };
 
   const tableColumns: BasicColumn[] = [
@@ -168,7 +271,8 @@
       title: '用户名',
       dataIndex: 'username',
       key: 'username',
-      width: 150,
+      width: 100,
+      fixed: 'left',
     },
     {
       title: '昵称',
@@ -191,24 +295,84 @@
       title: '职位',
       dataIndex: 'position',
       key: 'position',
+      width: 100,
+    },
+    // 角色
+    {
+      title: '角色',
+      dataIndex: 'roleId',
+      key: 'roleId',
       width: 150,
     },
-    // {
-    //   title: '负责的机型',
-    //   dataIndex: 'productCount',
-    //   key: 'productCount',
-    //   width: 150,
-    // },
+    {
+      title: '负责的专案',
+      dataIndex: 'productCount',
+      key: 'productCount',
+      width: 150,
+    },
     {
       title: '操作',
       dataIndex: 'action',
       key: 'action',
       align: 'center',
-      width: 200,
+      width: 150,
+      fixed: 'right',
     },
   ];
 
   const tableData = ref(generateRandomData());
+
+  const projectAssignModal = reactive({
+    visible: false,
+    loading: false,
+    formData: {
+      userId: 0,
+      assignedProjectIds: new Set<number>(),
+    },
+  });
+
+  const roleOptions = ref<Role[]>([
+    { id: 1, name: '超级管理员' },
+    { id: 2, name: '账号管理员' },
+    { id: 3, name: '普通用户' },
+  ]);
+
+  const assignedProjectsSearchKeyword = ref('');
+  const unassignedProjectsSearchKeyword = ref('');
+  const allProjects: string[] = generateRandomProjects();
+  const assignedProjects: Ref<string[]> = ref([]);
+  const filteredAssignedProjects = computed(() => {
+    return assignedProjects.value.filter((project) => {
+      const keyword = assignedProjectsSearchKeyword.value.toLowerCase();
+      return project.toLowerCase().includes(keyword);
+    });
+  });
+  const filteredUnassignedProjects = computed(() => {
+    return allProjects.filter((project) => {
+      const keyword = unassignedProjectsSearchKeyword.value.toLowerCase();
+      return !assignedProjects.value.includes(project) && project.toLowerCase().includes(keyword);
+    });
+  });
+
+  function handleAssignProjectToUser(project: string): void {
+    assignedProjects.value.push(project);
+  }
+
+  function handleUnassignProjectFromUser(project: string): void {
+    const index = assignedProjects.value.indexOf(project);
+    if (index !== -1) {
+      assignedProjects.value.splice(index, 1);
+    }
+  }
+
+  function generateRandomProjects(): string[] {
+    return Array.from({ length: 50 }, () => faker.location.city());
+  }
+
+  function getRoleName(roleId: number): string {
+    const role = roleOptions.value.find((item) => item.id === roleId);
+    return role ? role.name : '';
+  }
 
   function generateRandomData(): TableRow[] {
     const tableData: TableRow[] = [];
@@ -220,6 +384,7 @@
         department: `Department ${i}`,
         division: `Division ${i}`,
         position: `Position ${i}`,
+        roleId: (i % 3) + 1,
         productCount: 0,
       };
       tableData.push(tableRow);
@@ -256,6 +421,7 @@
       department: '工程部',
       division: '测试课',
       position: '软件开发工程师',
+      roleId: 1,
       productCount: 0,
     };
     tableData.value.push(tableRow);
@@ -286,6 +452,39 @@
     }
     message.success('删除成功');
   }
+
+  function handleAssignProject(record: Record<string, any>) {
+    const tableRow = record as TableRow;
+    const userId = tableRow.userId;
+    // TODO: fetch user's assigned projects
+    // set form data
+    projectAssignModal.formData = {
+      userId,
+      assignedProjectIds: new Set<number>(),
+    };
+
+    projectAssignModal.visible = true;
+  }
+
+  function handleAssignProjectSubmit() {
+    // 1. 发起请求
+    // 2. 重新获取用户信息
+    console.log('assign project');
+    projectAssignModal.visible = false;
+    message.success('分配成功');
+  }
 </script>
 
-<style scoped lang="less"></style>
+<style scoped lang="less">
+  .ant-list-item {
+    cursor: pointer;
+
+    &.selected {
+      background-color: #ddd;
+    }
+  }
+
+  .border-color {
+    border-color: #d9d9d9;
+  }
+</style>

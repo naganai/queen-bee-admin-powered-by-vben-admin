@@ -9,14 +9,14 @@
     >
       <template #headerCell="{ column }">
         <template v-if="column.dataIndex === 'action'">
-          <a-button color="success" @click="handleAddNew">添加新机型 </a-button>
+          <a-button color="success" @click="handleAddNew">添加新专案 </a-button>
         </template>
       </template>
       <template #bodyCell="{ record, column }">
         <template v-if="column.dataIndex === 'action'">
           <Button type="link" @click="handleEdit(record)">编辑</Button>
           <Popconfirm
-            title="你确定要删除这个机型吗？"
+            title="你确定要删除这个专案吗？"
             ok-text="确定"
             cancel-text="取消"
             @confirm="handleDelete(record.userId)"
@@ -28,7 +28,7 @@
     </BasicTable>
 
     <!-- Project add Drawer -->
-    <Drawer v-model:open="projectAddDrawer.visible" title="添加新机型" placement="right">
+    <Drawer v-model:open="projectAddDrawer.visible" title="添加新专案" placement="right">
       <!-- extra  -->
       <template #extra>
         <Button type="primary" @click="handleAddNewSubmit" :loading="projectAddDrawer.loading">
@@ -42,14 +42,14 @@
         :model="projectAddDrawer.formData"
         :rules="projectAddDrawer.rules"
       >
-        <Form.Item label="机型名称" name="name">
+        <Form.Item label="专案名称" name="name">
           <Input v-model:value="projectAddDrawer.formData.name" />
         </Form.Item>
       </Form>
     </Drawer>
 
     <!-- Project edit Drawer -->
-    <Drawer v-model:open="projectEditDrawer.visible" title="编辑机型" placement="right">
+    <Drawer v-model:open="projectEditDrawer.visible" title="编辑专案" placement="right">
       <!-- extra  -->
       <template #extra>
         <Button type="primary" @click="handleEditSubmit" :loading="projectEditDrawer.loading">
@@ -63,7 +63,7 @@
         :model="projectEditDrawer.formData"
         :rules="projectEditDrawer.rules"
       >
-        <Form.Item label="机型名称" name="name">
+        <Form.Item label="专案名称" name="name">
           <Input v-model:value="projectEditDrawer.formData.name" />
         </Form.Item>
       </Form>
@@ -84,7 +84,7 @@
 
   const columns: BasicColumn[] = [
     {
-      title: '机型',
+      title: '专案',
       dataIndex: 'name',
       align: 'left',
     },
@@ -108,7 +108,7 @@
       name: '',
     },
     rules: {
-      name: [{ required: true, message: '请输入机型名称', trigger: 'blur' }] as Rule[],
+      name: [{ required: true, message: '请输入专案名称', trigger: 'blur' }] as Rule[],
     },
   });
 
@@ -119,7 +119,7 @@
       name: '',
     },
     rules: {
-      name: [{ required: true, message: '请输入机型名称', trigger: 'blur' }] as Rule[],
+      name: [{ required: true, message: '请输入专案名称', trigger: 'blur' }] as Rule[],
     },
   });
 

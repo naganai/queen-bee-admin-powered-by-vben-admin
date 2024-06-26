@@ -153,8 +153,8 @@
     "menu": "Menu management",
     "moduleName": "System management",
     "password": "Change password",
-    "project": "Project",
-    "project_assignment": "Project assignment",
+    "permissionTag": "Permission Tag",
+    "project": "Project management",
     "queenBee": "QueenBee",
     "role": "Role management",
     "vxeTableAccount": "Account management(VxeTable)"
