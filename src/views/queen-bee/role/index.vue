@@ -99,7 +99,12 @@
     </Drawer>
 
     <!-- 查看权限抽屉 -->
-    <Drawer v-model:open="permissionAssignDrawer.visible" title="查看权限" placement="right">
+    <Drawer
+      v-model:open="permissionAssignDrawer.visible"
+      title="查看权限"
+      placement="right"
+      :bodyStyle="{ paddingLeft: 0, paddingRight: 0 }"
+    >
       <template #extra>
         <Button
           type="primary"
@@ -109,15 +114,28 @@
           保存
         </Button>
       </template>
-      <!-- 列举所有权限，已经拥有的权限添加selected样式 -->
-      <List item-layout="horizontal" :data-source="allPermissionTags">
-        <template #renderItem="{ item }">
-          <List.Item>
-            <List.Item.Meta :title="item.name" />
-            <a-checkbox v-model="permissionAssignDrawer.formData.permissionIds" :value="item.id" />
-          </List.Item>
-        </template>
-      </List>
+      <!-- search input -->
+      <div class="h-full flex flex-col gap-4">
+        <div class="pl-6 pr-6">
+          <Input v-model:value="permissionTagSearchKeyword" placeholder="请搜索要进行操作的权限" />
+        </div>
+        <ScrollContainer class="h-full">
+          <List
+            class="permission-tag-list"
+            item-layout="horizontal"
+            :data-source="allPermissionTags"
+          >
+            <template #renderItem="{ item }">
+              <List.Item @click="handleSelectePermissionTags(item.id)">
+                <List.Item.Meta :title="item.name" />
+                <CheckSquareFilled
+                  v-show="permissionAssignDrawer.formData.permissionIds.includes(item.id)"
+                />
+              </List.Item>
+            </template>
+          </List>
+        </ScrollContainer>
+      </div>
     </Drawer>
   </div>
 </template>
@@ -128,6 +146,8 @@
   import type { Rule } from 'ant-design-vue/es/form';
   import { BasicColumn, BasicTable } from '@/components/Table';
   import { faker } from '@faker-js/faker';
+  import ScrollContainer from '@/components/Container/src/ScrollContainer.vue';
+  import { CheckSquareFilled } from '@ant-design/icons-vue';
 
   interface PermissionTag {
     id: number;
@@ -160,7 +180,9 @@
     description: '',
   });
 
-  const allPermissionTags = ref<PermissionTag[]>([]);
+  const permissionTagSearchKeyword = ref('');
+
+  const allPermissionTags = ref<PermissionTag[]>(generateRandomPermissionTags());
 
   const permissionAssignDrawer = reactive({
     visible: false,
@@ -221,7 +243,18 @@
     },
   ];
 
-  const tableData = ref(generateRandomData());
+  const tableData = ref(generateRandomTableData());
+
+  function handleSelectePermissionTags(permissionId: number) {
+    const index = permissionAssignDrawer.formData.permissionIds.indexOf(permissionId);
+    // if permissionId is in the array, remove it
+    if (index !== -1) {
+      permissionAssignDrawer.formData.permissionIds.splice(index, 1);
+    } else {
+      permissionAssignDrawer.formData.permissionIds.push(permissionId);
+    }
+    console.log('selected permission ids', permissionAssignDrawer.formData.permissionIds);
+  }
 
   function handleShowRolePermission(record: Record<string, any>) {
     let tableRow = record as TableRow;
@@ -239,7 +272,7 @@
     }, 1000);
   }
 
-  function generateRandomData(): TableRow[] {
+  function generateRandomTableData(): TableRow[] {
     const tableData: TableRow[] = [];
     for (let i = 1; i <= 100; i++) {
       const tableRow: TableRow = {
@@ -251,6 +284,18 @@
       tableData.push(tableRow);
     }
     return tableData;
+  }
+
+  function generateRandomPermissionTags(): PermissionTag[] {
+    const permissionTags: PermissionTag[] = [];
+    for (let i = 1; i <= 100; i++) {
+      const permissionTag: PermissionTag = {
+        id: i,
+        name: faker.database.column(),
+      };
+      permissionTags.push(permissionTag);
+    }
+    return permissionTags;
   }
 
   async function saveRole() {
@@ -308,4 +353,12 @@
   }
 </script>
 
-<style scoped lang="less"></style>
+<style scoped lang="less">
+  .permission-tag-list {
+    .ant-list-item {
+      .anticon-check-square {
+        color: @primary-color;
+      }
+    }
+  }
+</style>
